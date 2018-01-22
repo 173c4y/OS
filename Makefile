@@ -1,5 +1,5 @@
 all: 
 	gcc -o shell shell.c
-
-clean: 
-	rm -rf shell
+	gcc -o ./commands/ls ./commands/ls.c
+clean:
+	rm -rf shell ./commands/ls

@@ -3,8 +3,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <wchar.h>
-#include <locale.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+// #include <wchar.h>
+// #include <locale.h>
 
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
@@ -17,20 +20,28 @@
 int main(int argc, char *argv[], char **envp)
 {
     //clrscr();
+    char defaultFolder[BUFFERSIZE];
+    getcwd(defaultFolder, BUFFERSIZE);
+    char commandsFolder[BUFFERSIZE];
+    strcpy(commandsFolder, defaultFolder);
+    strcat(commandsFolder, "/commands/");
+    strcat(defaultFolder, "/.history");
     while(1)
     {
+        char tmpCommandsFolder[BUFFERSIZE];
         char inputBuffer[BUFFERSIZE];
         char *tokens[100];
         int count = 0;
-        wchar_t *s2 = (wchar_t *) calloc(20, sizeof(wchar_t));
-        strcpy(s2, (wchar_t *) "\u25B6");
-        printf("%sshell%s %s %s", KGRN, KBLU, s2, KNRM); //u25b6
+        char curDir[BUFFERSIZE];
+        char oldDir[BUFFERSIZE];
+		getcwd(curDir, BUFFERSIZE);
+        printf("%sshell%s %s %s", KGRN, KBLU, ">>", KNRM); //u25b6
         fgets(inputBuffer, BUFFERSIZE, stdin);
         FILE *fptr; 
-        fptr = fopen(".history", "a");
+        fptr = fopen(defaultFolder, "a");
         if(fptr == NULL)
         {
-            printf("Permissions denied\n");
+            printf("WHATEVER\n");
             fclose(fptr);
             continue;
         }
@@ -43,7 +54,7 @@ int main(int argc, char *argv[], char **envp)
         char *token;
         token = strtok(inputBuffer, " ");
         tokens[count] = token;
-        while(token !=NULL)
+        while(token != NULL)
         {
             token = strtok(NULL, " ");
             tokens[++count] = token;
@@ -60,6 +71,11 @@ int main(int argc, char *argv[], char **envp)
         }
         if(strcmp(tokens[0], "pwd") == 0)
         {
+            if (tokens[1] != NULL)
+            {
+                printf("%sInvalid Usage of command.\nThe correct usage: is pwd%s\n", KRED, KNRM);
+                continue;
+            }
             char buf[1024];
             getcwd(buf, 1024);
             printf("%s \n",buf);
@@ -76,7 +92,7 @@ int main(int argc, char *argv[], char **envp)
             if (tokens[1] == NULL)
             {
                 char output[1024];
-                fptr = fopen(".history", "r");
+                fptr = fopen(defaultFolder, "r");
                 while (!feof(fptr))
                 {
                     if (fgets(output, 1024, fptr))
@@ -90,7 +106,7 @@ int main(int argc, char *argv[], char **envp)
             }
             if (strcmp(tokens[1], "-c") == 0)
             {
-                fptr = fopen(".history", "w");
+                fptr = fopen(defaultFolder, "w");
                 fclose(fptr);
                 continue;
             }
@@ -109,7 +125,7 @@ int main(int argc, char *argv[], char **envp)
             {
                 //printf("history number\n");
                 char output[1024];
-                fptr = fopen(".history", "r");
+                fptr = fopen(defaultFolder, "r");
                 while (!feof(fptr))
                 {
                     if (fgets(output, 1024, fptr))
@@ -121,7 +137,7 @@ int main(int argc, char *argv[], char **envp)
                 fclose(fptr);
                 int numberOfLine = atoi(tokens[1]);
                 int historyCounter = 0;
-                fptr = fopen(".history", "r");
+                fptr = fopen(defaultFolder, "r");
                 while (!feof(fptr))
                 {
                     if (fgets(output, 1024, fptr))
@@ -141,7 +157,105 @@ int main(int argc, char *argv[], char **envp)
             }
             continue;
         }
-        
+        if (strcmp(tokens[0], "echo") == 0)
+        {
+            //printf("noob shit going in here");
+            if (tokens[2] == NULL)
+            {
+                int length = strlen(tokens[1]);
+                //printf("%d\n", length);
+                for (int i = 0; i < length; i++)
+                {
+                    if (tokens[1][i] == '"')
+                        continue;
+
+                    printf("%c", tokens[1][i]);
+                }
+                printf("\n");
+                continue;
+            }
+            if(strcmp(tokens[1], "-n") == 0)
+            {
+                int length = strlen(tokens[2]);
+                for (int i = 0; i < length; i++)
+                {
+                    if(tokens[1][i] == '"')
+                        continue;
+                    printf("%c", tokens[2][i]);
+                }
+                continue;
+            }
+            if (strcmp(tokens[1], "-E") == 0)
+            {
+                int length = strlen(tokens[2]);
+                for (int i = 0; i < length; i++)
+                {
+                    if (tokens[1][i] == '"')
+                        continue;
+                    printf("%c", tokens[2][i]);
+                }
+                printf("\n");
+                continue;
+           }
+           printf("%sInvalid Usage of command.\nThe correct usage: is echo [options] [string]%s\n", KRED, KNRM);
+        }
+        if (strcmp(tokens[0], "cd") == 0)
+        {  
+            if (tokens[1] != NULL){
+				if (strcmp(tokens[1], "~") == 0)
+                {
+					//char * homeDir = getenv("HOME");
+					chdir(getenv("HOME"));
+					setenv("OLDPWD", curDir, 1);
+				} else if (strcmp(tokens[1], "-") == 0)
+                {
+					char * oldPWD = getenv("OLDPWD");
+					chdir(oldPWD);
+					setenv("OLDPWD", curDir, 1);
+				} else 
+                {
+					if (chdir(tokens[1]) != 0)
+                    {
+						printf("cd: no such file or directory: %s\n", tokens[1]);	
+					}
+				}
+			} else 
+            {
+				if (chdir(getenv("HOME")) != 0)
+                {
+					printf("Cannot process\n");	
+				} else 
+					setenv("OLDPWD", curDir, 1);
+			}
+            continue;
+        }
+        int lsCheck = strcmp(tokens[0], "ls");
+        int dateCheck = strcmp(tokens[0], "date");
+        int rmCheck = strcmp(tokens[0], "rm");
+        int mkdirCheck = strcmp(tokens[0], "mkdir");
+        int catCheck = strcmp(tokens[0], "cat");
+        if (!lsCheck || !dateCheck || !rmCheck || !mkdirCheck || !catCheck)
+        {
+            strcpy(tmpCommandsFolder, commandsFolder);
+            //printf("this is the original tmp folder %s %s \n", tmpCommandsFolder, tokens[0]);
+            strcat(tmpCommandsFolder, tokens[0]);
+            if (fork() == 0)
+            {
+                //printf("\ngoing into child with %s\n", tmpCommandsFolder);
+                execvp(tmpCommandsFolder, tokens);
+            }
+            else
+            {
+                //printf("\ngoing into parent\n");
+                wait(NULL);
+            }
+            continue;
+        }
+        printf("%sInvalid command%s\n", KRED, KNRM);
+        // if (strcmp(tokens[0], "") == 0)
+        // {
+        //     continue;
+        // }
         // else
         // {
         //     printf("%sInvalid Usage of command.\nThe correct usage: is history [options]%s\n", KRED, KNRM);
