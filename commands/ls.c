@@ -18,26 +18,20 @@ int main(int argc, char *argv[])
         printf("Could not open current directory" );
         return 0;
     }
-    // if (argc == 1)
-    //     printf("jhgjghjhg:%d\n", argc);
-    // printf("%d\n", argc);
     if (argc == 1)
     {
-        //printf("in here");
         while ((curDir = readdir(dirPointer)) != NULL)
         {   
             if (curDir->d_name[0] == '.')
                 continue;
             files[count] = strdup (curDir->d_name);
-            //files[count] = curDir->d_name;
             count++;
         }
         for (int i = 0; i < count-1; i++)
         {
-            //printf("%s ", files[i]);
             for (int j = i+1; j < count; j++)
             {
-                if (strcmp(files[i], files[j]) > 0)
+                if (strcasecmp(files[i], files[j]) > 0)
                 {
                     char *tmp = files[i];
                     files[i] = files[j];
@@ -45,7 +39,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-            for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
             printf("%s  ", files[i]);
         }
@@ -55,26 +49,59 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[1], "-a") == 0)
     {
         while ((curDir = readdir(dirPointer)) != NULL)
-        {
+        {   
             files[count] = strdup (curDir->d_name);
             count++;
         }
+        for (int i = 0; i < count-1; i++)
+        {
+            for (int j = i+1; j < count; j++)
+            {
+                if (strcasecmp(files[i], files[j]) > 0)
+                {
+                    char *tmp = files[i];
+                    files[i] = files[j];
+                    files[j] = tmp;
+                }
+            }
+        }
+        for (int i = 0; i < count; i++)
+        {
+            printf("%s  ", files[i]);
+        }
+        printf("\n");
         closedir(dirPointer);
     }
-    else if (strcmp(argv[1], "1") == 0)
+    else if (strcmp(argv[1], "-1") == 0)
     {
         while ((curDir = readdir(dirPointer)) != NULL)
-        {        
+        {   
             if (curDir->d_name[0] == '.')
                 continue;
             files[count] = strdup (curDir->d_name);
             count++;
         }
-        printf("\n");
+        for (int i = 0; i < count-1; i++)
+        {
+            for (int j = i+1; j < count; j++)
+            {
+                if (strcasecmp(files[i], files[j]) > 0)
+                {
+                    char *tmp = files[i];
+                    files[i] = files[j];
+                    files[j] = tmp;
+                }
+            }
+        }
+        for (int i = 0; i < count; i++)
+        {
+            printf("%s\n", files[i]);
+        }
         closedir(dirPointer);
     }
     else
     {
+        printf("Invalid argument\n");
         closedir(dirPointer);
     }
     // if (flag !=)

@@ -6,20 +6,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-// #include <wchar.h>
-// #include <locale.h>
+#include <wchar.h>
+#include <locale.h>
 
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
-#define KYEL  "\x1B[33m"
+#define KYEL  "\x1B[93m"
 #define KBLU  "\x1B[34m"
 
 #define BUFFERSIZE 1024
-
 int main(int argc, char *argv[], char **envp)
 {
-    //clrscr();
+    system("clear");
+    setlocale(LC_ALL, "");
     char defaultFolder[BUFFERSIZE];
     getcwd(defaultFolder, BUFFERSIZE);
     char commandsFolder[BUFFERSIZE];
@@ -35,7 +35,10 @@ int main(int argc, char *argv[], char **envp)
         char curDir[BUFFERSIZE];
         char oldDir[BUFFERSIZE];
 		getcwd(curDir, BUFFERSIZE);
-        printf("%sshell%s %s %s", KGRN, KBLU, ">>", KNRM); //u25b6
+        if (getuid() == 0)
+            printf("%sshell%s %lc %s ", KGRN, KBLU, (wint_t)9813, KNRM); //queen
+        else
+            printf("%sshell%s %lc %s ", KGRN, KBLU, (wint_t)9812, KNRM); //king
         fgets(inputBuffer, BUFFERSIZE, stdin);
         FILE *fptr; 
         fptr = fopen(defaultFolder, "a");
